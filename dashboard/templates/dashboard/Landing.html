@@ -1,0 +1,301 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sentiment Analysis</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.20), transparent 30%),
+                radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.18), transparent 30%),
+                #080b16;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        /* Background decoration */
+        .background {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.35;
+        }
+
+        .orb-1 {
+            width: 300px;
+            height: 300px;
+            background: #6366f1;
+            top: -100px;
+            left: -80px;
+        }
+
+        .orb-2 {
+            width: 350px;
+            height: 350px;
+            background: #9333ea;
+            right: -120px;
+            bottom: -120px;
+        }
+
+        /* Main container */
+        .container {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+        }
+
+        .content {
+            width: 100%;
+            max-width: 900px;
+            text-align: center;
+        }
+
+        /* Logo */
+        .logo {
+            width: 75px;
+            height: 75px;
+            margin: 0 auto 25px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 22px;
+
+            background: linear-gradient(
+                135deg,
+                #6366f1,
+                #8b5cf6
+            );
+
+            box-shadow:
+                0 15px 40px rgba(99, 102, 241, 0.35);
+
+            font-size: 32px;
+            font-weight: 800;
+        }
+
+        /* Heading */
+        h1 {
+            font-size: clamp(48px, 8vw, 82px);
+            line-height: 1;
+            font-weight: 800;
+            letter-spacing: -3px;
+            margin-bottom: 20px;
+
+            background: linear-gradient(
+                90deg,
+                #ffffff,
+                #c7d2fe,
+                #a78bfa
+            );
+
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tagline {
+            font-size: 20px;
+            color: #a7adc4;
+            max-width: 650px;
+            margin: 0 auto 45px;
+            line-height: 1.7;
+        }
+
+        .tagline span {
+            color: #c4b5fd;
+            font-weight: 600;
+        }
+
+        /* Buttons */
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            min-width: 190px;
+            padding: 16px 28px;
+
+            border-radius: 14px;
+
+            text-decoration: none;
+            color: white;
+
+            font-size: 16px;
+            font-weight: 600;
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+
+            transition:
+                transform 0.25s ease,
+                box-shadow 0.25s ease,
+                background 0.25s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(
+                135deg,
+                #6366f1,
+                #8b5cf6
+            );
+
+            box-shadow:
+                0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-tertiary {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(167, 139, 250, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-5px);
+        }
+
+        .btn-primary:hover {
+            box-shadow:
+                0 18px 40px rgba(99, 102, 241, 0.45);
+        }
+
+        .btn-secondary:hover,
+        .btn-tertiary:hover {
+            background: rgba(255, 255, 255, 0.10);
+            border-color: rgba(167, 139, 250, 0.5);
+        }
+
+        /* Small footer */
+        .footer {
+            margin-top: 60px;
+            color: #686f88;
+            font-size: 13px;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            body {
+                overflow: auto;
+            }
+
+            .container {
+                padding: 25px 18px;
+            }
+
+            h1 {
+                font-size: 52px;
+                letter-spacing: -2px;
+            }
+
+            .tagline {
+                font-size: 16px;
+            }
+
+            .buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .footer {
+                margin-top: 40px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Background -->
+    <div class="background">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container">
+
+        <div class="content">
+
+            <!-- Logo -->
+            <div class="logo">
+                S
+            </div>
+
+            <!-- Heading -->
+            <h1>Sentiment Analysis</h1>
+
+            <p class="tagline">
+                Analyze <span>real-time sentiment</span> across social media
+                platforms and transform audience reactions into meaningful insights.
+            </p>
+
+            <!-- Three Buttons -->
+            <div class="buttons">
+
+                <!-- Button 1 -->
+                <a href="{% url 'home' %}"
+                   class="btn btn-primary">
+                    ◎ Sentiment on SocialMedia
+                </a>
+
+                <!-- Button 2 -->
+                <a href="{% url 'youtube_monitor:youtube-monitor' %}"
+                   class="btn btn-secondary">
+                    ▶ YouTube Monitor
+                </a>
+
+                <!-- Button 3 -->
+                <a href="{% url 'single_prediction' %}"
+                   class="btn btn-tertiary">
+                    ✦ Single text
+                </a>
+
+            </div>
+
+            <div class="footer">
+                SentimentScope · Real-time Social Media Sentiment Intelligence
+            </div>
+
+        </div>
+
+    </main>
+
+</body>
+</html>

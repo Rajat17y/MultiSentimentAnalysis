@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <title>Sentiment Results</title>
+
+</head>
+
+<body>
+
+    <h1>SentimentScope</h1>
+
+    <h2>
+        Topic: {{ analysis.topic }}
+    </h2>
+
+
+    <div>
+
+        <h3>Overall Sentiment</h3>
+
+        <p>
+            {{ statistics.overall_sentiment }}
+        </p>
+
+    </div>
+
+
+    <div>
+
+        <h3>Total Comments Processed</h3>
+
+        <p>
+            {{ statistics.total_comments }}
+        </p>
+
+    </div>
+
+
+    <div>
+
+        <h3>Positive Rate</h3>
+
+        <p>
+            {{ statistics.positive_rate }}%
+        </p>
+
+    </div>
+
+
+    <div>
+
+        <h3>Negative Rate</h3>
+
+        <p>
+            {{ statistics.negative_rate }}%
+        </p>
+
+    </div>
+
+
+    <div>
+
+        <h3>Neutral Rate</h3>
+
+        <p>
+            {{ statistics.neutral_rate }}%
+        </p>
+
+    </div>
+
+
+    <div>
+
+        <h3>Sentiment Gap</h3>
+
+        <p>
+            {{ statistics.sentiment_gap }}%
+        </p>
+
+    </div>
+
+
+    <a href="{% url 'comments' analysis.id %}">
+        View All Comments
+    </a>
+
+</body>
+
+</html>

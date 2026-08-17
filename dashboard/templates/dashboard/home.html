@@ -1,0 +1,2126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SentimentScope</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+    /* =========================
+       TOKENS
+    ========================== */
+
+    :root {
+        --ink: #0a0d12;
+        --panel: #11151c;
+        --panel-raised: #161c25;
+        --grid-line: #232a36;
+        --grid-line-soft: #1a2029;
+
+        --text-primary: #e9edf3;
+        --text-dim: #7c8798;
+        --text-faint: #4a5464;
+
+        --positive: #34e2a0;
+        --positive-dim: rgba(52, 226, 160, 0.14);
+        --negative: #ff5c7a;
+        --negative-dim: rgba(255, 92, 122, 0.14);
+        --neutral: #f2b84b;
+        --neutral-dim: rgba(242, 184, 75, 0.14);
+
+        --accent: #5fa8ff;
+        --accent-dim: rgba(95, 168, 255, 0.14);
+
+        --font-display: "Space Grotesk", sans-serif;
+        --font-mono: "IBM Plex Mono", monospace;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    ::selection {
+        background: var(--accent-dim);
+        color: var(--accent);
+    }
+
+    body {
+        font-family: var(--font-mono);
+        background:
+            radial-gradient(circle at 15% 0%, rgba(95, 168, 255, 0.06), transparent 45%),
+            radial-gradient(circle at 85% 100%, rgba(52, 226, 160, 0.05), transparent 45%),
+            var(--ink);
+        color: var(--text-primary);
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 48px 24px 80px;
+        line-height: 1.5;
+    }
+
+    a { color: var(--accent); }
+
+    button:focus-visible,
+    input:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.001ms !important;
+            transition-duration: 0.001ms !important;
+        }
+    }
+
+
+    /* =========================
+       HEADER
+    ========================== */
+
+    .scope-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 6px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .scope-title {
+        font-family: var(--font-display);
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .status-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--text-faint);
+        box-shadow: 0 0 0 3px var(--grid-line-soft);
+        transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .status-dot.live {
+        background: var(--positive);
+        box-shadow: 0 0 0 3px var(--positive-dim);
+        animation: pulse-dot 1.8s ease-in-out infinite;
+    }
+
+    .status-dot.busy {
+        background: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-dim);
+        animation: pulse-dot 0.9s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.35; }
+    }
+
+    .status-label {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+    }
+
+    .scope-tagline {
+        margin: 0 0 32px;
+        font-size: 13px;
+        color: var(--text-dim);
+        letter-spacing: 0.02em;
+    }
+
+
+    /* =========================
+       TUNER / FORM
+    ========================== */
+
+    #topicForm {
+        display: flex;
+        gap: 10px;
+        padding: 14px;
+        background: var(--panel);
+        border: 1px solid var(--grid-line);
+        border-radius: 10px;
+        margin-bottom: 40px;
+    }
+
+    #topic {
+        flex: 1;
+        background: var(--ink);
+        border: 1px solid var(--grid-line);
+        border-radius: 7px;
+        padding: 13px 16px;
+        font-family: var(--font-mono);
+        font-size: 15px;
+        color: var(--text-primary);
+        transition: border-color 0.2s ease;
+    }
+
+    #topic::placeholder {
+        color: var(--text-faint);
+    }
+
+    #topic:focus {
+        border-color: var(--accent);
+    }
+
+    #topicForm button[type="submit"] {
+        background: var(--accent);
+        color: #06121f;
+        border: none;
+        border-radius: 7px;
+        padding: 0 22px;
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 14px;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        transition: filter 0.15s ease, transform 0.15s ease;
+        white-space: nowrap;
+    }
+
+    #topicForm button[type="submit"]:hover {
+        filter: brightness(1.1);
+        transform: translateY(-1px);
+    }
+
+    #topicForm button[type="submit"]:active {
+        transform: translateY(0);
+    }
+
+
+    /* =========================
+       LOADING SCREEN — SWEEP
+    ========================== */
+
+    #loadingScreen {
+        text-align: left;
+        padding: 32px;
+        margin-top: 4px;
+        margin-bottom: 40px;
+        background: var(--panel);
+        border: 1px solid var(--grid-line);
+        border-radius: 10px;
+    }
+
+    #loadingScreen h2 {
+        font-family: var(--font-display);
+        font-size: 16px;
+        margin: 0 0 4px;
+        font-weight: 600;
+    }
+
+    #loadingScreen p {
+        margin: 0 0 20px;
+        font-size: 13px;
+        color: var(--text-dim);
+    }
+
+    .sweep-track {
+        position: relative;
+        height: 56px;
+        border-radius: 6px;
+        overflow: hidden;
+        background:
+            repeating-linear-gradient(
+                90deg,
+                var(--grid-line-soft) 0,
+                var(--grid-line-soft) 1px,
+                transparent 1px,
+                transparent 32px
+            ),
+            var(--ink);
+        border: 1px solid var(--grid-line);
+    }
+
+    .sweep-track::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 40%;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            var(--accent-dim) 40%,
+            var(--accent) 50%,
+            var(--accent-dim) 60%,
+            transparent
+        );
+        filter: blur(1px);
+        animation: sweep 1.6s linear infinite;
+    }
+
+    @keyframes sweep {
+        0% { left: -40%; }
+        100% { left: 100%; }
+    }
+
+
+    /* =========================
+       RESULTS HEADER
+    ========================== */
+
+    #results h2 {
+        font-family: var(--font-display);
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 24px;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    #results h2::before {
+        content: "TRACKING";
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        color: var(--text-faint);
+        background: var(--panel-raised);
+        border: 1px solid var(--grid-line);
+        border-radius: 4px;
+        padding: 3px 8px;
+    }
+
+    #resultTopic {
+        color: var(--accent);
+    }
+
+
+    /* =========================
+       STATISTICS — DIAL CARDS
+    ========================== */
+
+    .statistics {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 4px;
+        margin-bottom: 8px;
+    }
+
+    .stat-card {
+        border: 1px solid var(--grid-line);
+        background: var(--panel);
+        border-radius: 10px;
+        padding: 18px 18px 16px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--grid-line);
+    }
+
+    .stat-card[data-tone="positive"]::before { background: var(--positive); }
+    .stat-card[data-tone="negative"]::before { background: var(--negative); }
+    .stat-card[data-tone="neutral"]::before { background: var(--neutral); }
+    .stat-card[data-tone="accent"]::before { background: var(--accent); }
+
+    .stat-card h3 {
+        margin: 0 0 10px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+    }
+
+    .stat-value {
+        font-family: var(--font-display);
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        margin: 0;
+        color: var(--text-primary);
+    }
+
+    .stat-card[data-tone="positive"] .stat-value { color: var(--positive); }
+    .stat-card[data-tone="negative"] .stat-value { color: var(--negative); }
+    .stat-card[data-tone="neutral"] .stat-value { color: var(--neutral); }
+    .stat-card[data-tone="accent"] .stat-value { color: var(--accent); }
+
+
+    /* =========================
+       SIGNATURE — SENTIMENT GAP METER
+    ========================== */
+
+    #gapMeterCard {
+        grid-column: 1 / -1;
+        padding-bottom: 22px;
+    }
+
+    .gap-meter {
+        margin-top: 14px;
+        position: relative;
+    }
+
+    .gap-track {
+        position: relative;
+        height: 14px;
+        border-radius: 7px;
+        background: var(--ink);
+        border: 1px solid var(--grid-line);
+        overflow: hidden;
+    }
+
+    .gap-track::before {
+        /* center zero line */
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--grid-line);
+        z-index: 2;
+    }
+
+    .gap-fill {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        width: 0%;
+        transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1), background 0.3s ease, left 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .gap-fill.positive {
+        background: linear-gradient(90deg, var(--positive-dim), var(--positive));
+        box-shadow: 0 0 12px var(--positive-dim);
+    }
+
+    .gap-fill.negative {
+        background: linear-gradient(90deg, var(--negative), var(--negative-dim));
+        box-shadow: 0 0 12px var(--negative-dim);
+    }
+
+    .gap-scale {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        color: var(--text-faint);
+        letter-spacing: 0.06em;
+        margin-top: 6px;
+    }
+
+    .gap-scale span:nth-child(1) { color: var(--negative); }
+    .gap-scale span:nth-child(3) { color: var(--positive); }
+
+
+    /* =========================
+       SENTIMENT DISTRIBUTION — DONUT
+    ========================== */
+
+    #distributionCard {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        gap: 32px;
+        flex-wrap: wrap;
+        padding-bottom: 20px;
+    }
+
+    #distributionCard .distribution-body {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+        flex-wrap: wrap;
+    }
+
+    .donut-wrap {
+        position: relative;
+        width: 190px;
+        height: 190px;
+        flex-shrink: 0;
+    }
+
+    .donut {
+        width: 190px;
+        height: 190px;
+        border-radius: 50%;
+        background: conic-gradient(var(--grid-line) 0deg 360deg);
+        transition: background 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .donut-hole {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 124px;
+        height: 124px;
+        border-radius: 50%;
+        background: var(--panel);
+        border: 1px solid var(--grid-line);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .donut-hole-value {
+        font-family: var(--font-display);
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.1;
+    }
+
+    .donut-hole-label {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-faint);
+        margin-top: 2px;
+    }
+
+    .donut-legend {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .donut-legend-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        color: var(--text-dim);
+    }
+
+    .donut-swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        flex-shrink: 0;
+    }
+
+    .donut-swatch.positive { background: var(--positive); }
+    .donut-swatch.negative { background: var(--negative); }
+    .donut-swatch.neutral  { background: var(--neutral); }
+
+    .donut-legend-value {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-left: auto;
+        min-width: 48px;
+        text-align: right;
+    }
+
+
+    /* =========================
+       PLATFORM SPLIT — MINI DONUTS
+    ========================== */
+
+    #platformChartCard {
+        grid-column: 1 / -1;
+    }
+
+    .platform-donuts {
+        display: flex;
+        gap: 22px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+    }
+
+    .platform-donut-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        width: 88px;
+    }
+
+    .platform-donut-item .donut-wrap {
+        width: 84px;
+        height: 84px;
+    }
+
+    .platform-donut-item .donut {
+        width: 84px;
+        height: 84px;
+    }
+
+    .platform-donut-item .donut-hole {
+        width: 54px;
+        height: 54px;
+    }
+
+    .platform-donut-item .donut-hole-value {
+        font-size: 12px;
+    }
+
+    .platform-donut-item .donut-hole-label {
+        display: none;
+    }
+
+    .platform-donut-label {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--text-dim);
+        text-align: center;
+        letter-spacing: 0.02em;
+    }
+
+
+    /* =========================
+       COMMENTS SECTION
+    ========================== */
+
+    #commentsSection {
+        margin-top: 36px;
+    }
+
+    #commentsSection > h2 {
+        font-family: var(--font-display);
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 14px;
+        color: var(--text-primary);
+    }
+
+    #platformButtons {
+        margin: 0 0 18px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .platform-button {
+        margin: 0;
+        background: var(--panel);
+        border: 1px solid var(--grid-line);
+        color: var(--text-dim);
+        border-radius: 20px;
+        padding: 7px 16px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .platform-button:hover {
+        border-color: var(--accent);
+        color: var(--text-primary);
+    }
+
+    .platform-button.active {
+        background: var(--accent-dim);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+
+    /* =========================
+       COMMENT CARD
+    ========================== */
+
+    .comment-card {
+        border: 1px solid var(--grid-line);
+        border-left: 3px solid var(--grid-line);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 16px 18px;
+        margin-bottom: 10px;
+        transition: border-color 0.15s ease;
+    }
+
+    .comment-card[data-tone="positive"] { border-left-color: var(--positive); }
+    .comment-card[data-tone="negative"] { border-left-color: var(--negative); }
+    .comment-card[data-tone="neutral"]  { border-left-color: var(--neutral); }
+
+    .comment-text {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 15px;
+        line-height: 1.5;
+        margin-bottom: 12px;
+        color: var(--text-primary);
+    }
+
+    .comment-meta {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        font-size: 12px;
+    }
+
+    .tag-pill {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 600;
+        padding: 3px 9px;
+        border-radius: 20px;
+        border: 1px solid var(--grid-line);
+        color: var(--text-dim);
+    }
+
+    .tag-pill.positive { color: var(--positive); border-color: var(--positive); background: var(--positive-dim); }
+    .tag-pill.negative { color: var(--negative); border-color: var(--negative); background: var(--negative-dim); }
+    .tag-pill.neutral  { color: var(--neutral); border-color: var(--neutral); background: var(--neutral-dim); }
+
+    .confidence-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-faint);
+        font-family: var(--font-mono);
+        font-size: 11px;
+    }
+
+    .confidence-bar {
+        width: 70px;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--grid-line);
+        overflow: hidden;
+    }
+
+    .confidence-bar-fill {
+        height: 100%;
+        background: var(--accent);
+        border-radius: 2px;
+    }
+
+
+    /* =========================
+       PAGINATION
+    ========================== */
+
+    #pagination {
+        margin-top: 18px;
+        text-align: left;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .pagination-button {
+        margin: 0;
+        padding: 7px 12px;
+        background: var(--panel);
+        border: 1px solid var(--grid-line);
+        color: var(--text-dim);
+        border-radius: 6px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .pagination-button:hover:not(:disabled) {
+        border-color: var(--accent);
+        color: var(--text-primary);
+    }
+
+    .pagination-button.active {
+        background: var(--accent-dim);
+        border-color: var(--accent);
+        color: var(--accent);
+        font-weight: 600;
+    }
+
+    .pagination-button:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+    }
+
+    .hero-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+    }
+
+    .hero-btn {
+        display: inline-block;
+        padding: 10px 22px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        color: white;
+        background: #2563eb;
+        transition: 0.2s ease;
+    }
+
+    .hero-btn:hover {
+        transform: translateY(-2px);
+        opacity: 0.9;
+    }
+
+
+    /* =========================
+       RESPONSIVE
+    ========================== */
+
+    @media (max-width: 640px) {
+        body { padding: 32px 16px 60px; }
+        .statistics { grid-template-columns: repeat(2, 1fr); }
+        #gapMeterCard { grid-column: 1 / -1; }
+        #topicForm { flex-direction: column; }
+        #topicForm button[type="submit"] { padding: 13px; }
+    }
+
+</style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =================================
+         PAGE TITLE
+    ================================== -->
+
+    <div class="scope-header">
+        <h1 class="scope-title">
+            SentimentScope
+            <span id="statusDot" class="status-dot"></span>
+        </h1>
+        <span id="statusLabel" class="status-label">idle</span>
+    </div>
+
+    <p class="scope-tagline">
+        Tune in a topic to read live sentiment across social platforms.
+    </p>
+
+
+    <!-- =================================
+         TOPIC FORM
+    ================================== -->
+
+    <form id="topicForm">
+
+        {% csrf_token %}
+
+        <input
+            type="text"
+            id="topic"
+            name="topic"
+            placeholder="Enter a topic to track…"
+            required
+        >
+
+        <button type="submit">
+            Analyze Sentiment
+        </button>
+
+    </form>
+
+
+    <!-- =================================
+         LOADING SCREEN
+    ================================== -->
+
+    <div
+        id="loadingScreen"
+        style="display: none;"
+    >
+
+        <h2>Analyzing…</h2>
+
+        <p>
+            Fetching social media comments and analyzing sentiment.
+        </p>
+
+        <div class="sweep-track"></div>
+
+    </div>
+
+
+    <!-- =================================
+         STATISTICS
+    ================================== -->
+
+    <div
+        id="results"
+        style="display: none;"
+    >
+
+        <h2>
+            <span id="resultTopic"></span>
+        </h2>
+
+
+        <div class="statistics">
+
+
+            <!-- Overall Sentiment -->
+
+            <div class="stat-card" data-tone="accent">
+
+                <h3>
+                    Overall Sentiment
+                </h3>
+
+                <p
+                    id="overallSentiment"
+                    class="stat-value"
+                ></p>
+
+            </div>
+
+
+            <!-- Total Comments -->
+
+            <div class="stat-card">
+
+                <h3>
+                    Total Comments
+                </h3>
+
+                <p
+                    id="totalComments"
+                    class="stat-value"
+                ></p>
+
+            </div>
+
+
+            <!-- Positive Rate -->
+
+            <div class="stat-card" data-tone="positive">
+
+                <h3>
+                    Positive Rate
+                </h3>
+
+                <p
+                    id="positiveRate"
+                    class="stat-value"
+                ></p>
+
+            </div>
+
+
+            <!-- Negative Rate -->
+
+            <div class="stat-card" data-tone="negative">
+
+                <h3>
+                    Negative Rate
+                </h3>
+
+                <p
+                    id="negativeRate"
+                    class="stat-value"
+                ></p>
+
+            </div>
+
+
+            <!-- Neutral Rate -->
+
+            <div class="stat-card" data-tone="neutral">
+
+                <h3>
+                    Neutral Rate
+                </h3>
+
+                <p
+                    id="neutralRate"
+                    class="stat-value"
+                ></p>
+
+            </div>
+
+
+            <!-- Sentiment Gap -->
+
+            <div class="stat-card" id="gapCard">
+
+                <h3>
+                    Sentiment Gap
+                </h3>
+
+                <p
+                    id="sentimentGap"
+                    class="stat-value"
+                ></p>
+
+            </div>
+
+
+            <!-- Sentiment Gap Meter (signature element) -->
+
+            <div class="stat-card" id="gapMeterCard">
+
+                <h3>
+                    Gap Reading — Negative ← Center → Positive
+                </h3>
+
+                <div class="gap-meter">
+                    <div class="gap-track">
+                        <div id="gapFill" class="gap-fill"></div>
+                    </div>
+                    <div class="gap-scale">
+                        <span>−100%</span>
+                        <span>0</span>
+                        <span>+100%</span>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- Sentiment Distribution Donut -->
+
+            <div class="stat-card" id="distributionCard">
+
+                <div>
+                    <h3>
+                        Sentiment Distribution
+                    </h3>
+
+                    <div class="distribution-body">
+
+                        <div class="donut-wrap">
+                            <div id="distributionDonut" class="donut"></div>
+                            <div class="donut-hole">
+                                <span id="distributionDonutTotal" class="donut-hole-value">0</span>
+                                <span class="donut-hole-label">comments</span>
+                            </div>
+                        </div>
+
+                        <div class="donut-legend">
+
+                            <div class="donut-legend-row">
+                                <span class="donut-swatch positive"></span>
+                                Positive
+                                <span id="legendPositive" class="donut-legend-value">0%</span>
+                            </div>
+
+                            <div class="donut-legend-row">
+                                <span class="donut-swatch negative"></span>
+                                Negative
+                                <span id="legendNegative" class="donut-legend-value">0%</span>
+                            </div>
+
+                            <div class="donut-legend-row">
+                                <span class="donut-swatch neutral"></span>
+                                Neutral
+                                <span id="legendNeutral" class="donut-legend-value">0%</span>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- Per-Platform Distribution -->
+
+            <div class="stat-card" id="platformChartCard">
+
+                <h3>
+                    Distribution by Platform
+                </h3>
+
+                <div id="platformDonuts" class="platform-donuts"></div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================
+             COMMENTS SECTION
+        ================================== -->
+
+        <div
+            id="commentsSection"
+        >
+
+            <h2>
+                Social Media Comments
+            </h2>
+
+
+            <!-- Platform buttons -->
+
+            <div
+                id="platformButtons"
+            ></div>
+
+
+            <!-- Comments -->
+
+            <div
+                id="commentsContainer"
+            ></div>
+
+
+            <!-- Pagination -->
+
+            <div
+                id="pagination"
+            ></div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================
+         JAVASCRIPT
+    ================================== -->
+
+    <script>
+
+        console.log(
+            "JavaScript loaded!"
+        );
+
+
+        /* =================================
+           GLOBAL VARIABLES
+        ================================= */
+
+        let commentsData = {};
+
+        let currentPlatform = "";
+
+        let currentPage = 1;
+
+        const commentsPerPage = 10;
+
+
+        /* =================================
+           GET FORM
+        ================================= */
+
+        const form =
+            document.getElementById(
+                "topicForm"
+            );
+
+
+        console.log(
+            "FORM FOUND:",
+            form
+        );
+
+
+        /* =================================
+           STATUS INDICATOR HELPER
+        ================================= */
+
+        function setStatus(state) {
+
+            const dot = document.getElementById("statusDot");
+            const label = document.getElementById("statusLabel");
+
+            dot.className = "status-dot";
+
+            if (state === "busy") {
+                dot.classList.add("busy");
+                label.textContent = "scanning…";
+            } else if (state === "live") {
+                dot.classList.add("live");
+                label.textContent = "live reading";
+            } else {
+                label.textContent = "idle";
+            }
+
+        }
+
+
+        /* =================================
+           SENTIMENT TONE HELPER
+        ================================= */
+
+        function sentimentTone(sentiment) {
+
+            const value = String(sentiment || "").toLowerCase();
+
+            if (value.indexOf("pos") !== -1) return "positive";
+            if (value.indexOf("neg") !== -1) return "negative";
+
+            return "neutral";
+
+        }
+
+
+        /* =================================
+           DISPLAY COMMENTS
+        ================================= */
+
+        function displayComments(
+            platform,
+            page = 1
+        ) {
+
+            currentPlatform =
+                platform;
+
+            currentPage =
+                page;
+
+
+            /*
+             * Get comments belonging
+             * to selected platform.
+             */
+
+            const comments =
+                commentsData[platform] || [];
+
+
+            const container =
+                document.getElementById(
+                    "commentsContainer"
+                );
+
+
+            container.innerHTML = "";
+
+
+            /* =========================
+               SYNC PLATFORM BUTTON STATE
+            ========================== */
+
+            document
+                .querySelectorAll(".platform-button")
+                .forEach(function(btn) {
+                    btn.classList.toggle(
+                        "active",
+                        btn.textContent === platform
+                    );
+                });
+
+
+            /* =========================
+               EMPTY RESULT
+            ========================== */
+
+            if (
+                comments.length === 0
+            ) {
+
+                container.innerHTML =
+                    "<p style=\"color: var(--text-dim);\">No comments found for this platform.</p>";
+
+                document.getElementById(
+                    "pagination"
+                ).innerHTML = "";
+
+                return;
+
+            }
+
+
+            /* =========================
+               CALCULATE PAGE
+            ========================== */
+
+            const start =
+                (
+                    page - 1
+                ) * commentsPerPage;
+
+
+            const end =
+                start +
+                commentsPerPage;
+
+
+            const pageComments =
+                comments.slice(
+                    start,
+                    end
+                );
+
+
+            /* =========================
+               DISPLAY COMMENTS
+            ========================== */
+
+            pageComments.forEach(
+                function(comment) {
+
+
+                    /*
+                     * Expected format:
+                     *
+                     * comment[0] = text
+                     * comment[1] = class
+                     * comment[2] = confidence
+                     */
+
+                    const commentText =
+                        comment[0];
+
+
+                    const sentiment =
+                        comment[1];
+
+
+                    const confidence =
+                        comment[2];
+
+
+                    const tone =
+                        sentimentTone(sentiment);
+
+
+                    const card =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    card.className =
+                        "comment-card";
+
+                    card.setAttribute(
+                        "data-tone",
+                        tone
+                    );
+
+
+                    card.innerHTML = `
+
+                        <div
+                            class="comment-text"
+                        >
+
+                            ${escapeHTML(
+                                commentText
+                            )}
+
+                        </div>
+
+
+                        <div
+                            class="comment-meta"
+                        >
+
+                            <span class="tag-pill ${tone}">
+                                ${sentiment}
+                            </span>
+
+                            <span class="confidence-wrap">
+                                Confidence
+                                <span class="confidence-bar">
+                                    <span
+                                        class="confidence-bar-fill"
+                                        style="width: ${(confidence).toFixed(0)}%;"
+                                    ></span>
+                                </span>
+                                ${(
+                                    confidence
+                                ).toFixed(2)}%
+                            </span>
+
+                        </div>
+
+                    `;
+
+
+                    container.appendChild(
+                        card
+                    );
+
+                }
+            );
+
+
+            /* =========================
+               CREATE PAGINATION
+            ========================== */
+
+            createPagination(
+                comments.length,
+                page
+            );
+
+        }
+
+
+        /* =================================
+           CREATE PAGINATION
+        ================================== */
+
+        function createPagination(
+            totalComments,
+            currentPage
+        ) {
+
+            const pagination =
+                document.getElementById(
+                    "pagination"
+                );
+
+
+            pagination.innerHTML = "";
+
+
+            const totalPages =
+                Math.ceil(
+                    totalComments /
+                    commentsPerPage
+                );
+
+
+            /*
+             * No pagination required
+             * if only one page exists.
+             */
+
+            if (
+                totalPages <= 1
+            ) {
+
+                return;
+
+            }
+
+
+            /* =========================
+               PREVIOUS BUTTON
+            ========================== */
+
+            const previousButton =
+                document.createElement(
+                    "button"
+                );
+
+
+            previousButton.textContent =
+                "← Previous";
+
+
+            previousButton.className =
+                "pagination-button";
+
+
+            previousButton.disabled =
+                currentPage === 1;
+
+
+            previousButton.onclick =
+                function() {
+
+                    displayComments(
+                        currentPlatform,
+                        currentPage - 1
+                    );
+
+                };
+
+
+            pagination.appendChild(
+                previousButton
+            );
+
+
+            /* =========================
+               PAGE NUMBERS
+            ========================== */
+
+            for (
+                let page = 1;
+                page <= totalPages;
+                page++
+            ) {
+
+                const button =
+                    document.createElement(
+                        "button"
+                    );
+
+
+                button.textContent =
+                    page;
+
+
+                button.className =
+                    "pagination-button";
+
+
+                if (
+                    page === currentPage
+                ) {
+
+                    button.classList.add(
+                        "active"
+                    );
+
+                }
+
+
+                button.onclick =
+                    function() {
+
+                        displayComments(
+                            currentPlatform,
+                            page
+                        );
+
+                    };
+
+
+                pagination.appendChild(
+                    button
+                );
+
+            }
+
+
+            /* =========================
+               NEXT BUTTON
+            ========================== */
+
+            const nextButton =
+                document.createElement(
+                    "button"
+                );
+
+
+            nextButton.textContent =
+                "Next →";
+
+
+            nextButton.className =
+                "pagination-button";
+
+
+            nextButton.disabled =
+                currentPage === totalPages;
+
+
+            nextButton.onclick =
+                function() {
+
+                    displayComments(
+                        currentPlatform,
+                        currentPage + 1
+                    );
+
+                };
+
+
+            pagination.appendChild(
+                nextButton
+            );
+
+        }
+
+
+        /* =================================
+           CREATE PLATFORM BUTTONS
+        ================================== */
+
+        function createPlatformButtons() {
+
+            const container =
+                document.getElementById(
+                    "platformButtons"
+                );
+
+
+            container.innerHTML = "";
+
+
+            /*
+             * Get platform names
+             */
+
+            const platforms =
+                Object.keys(
+                    commentsData
+                );
+
+
+            platforms.forEach(
+                function(platform) {
+
+
+                    const button =
+                        document.createElement(
+                            "button"
+                        );
+
+
+                    button.textContent =
+                        platform;
+
+
+                    button.className =
+                        "platform-button";
+
+
+                    button.onclick =
+                        function() {
+
+                            displayComments(
+                                platform,
+                                1
+                            );
+
+                        };
+
+
+                    container.appendChild(
+                        button
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* =================================
+           ESCAPE HTML
+        ================================== */
+
+        function escapeHTML(
+            text
+        ) {
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+
+            div.textContent =
+                text;
+
+
+            return div.innerHTML;
+
+        }
+
+
+        /* =================================
+           UPDATE SENTIMENT GAP METER
+        ================================== */
+
+        function updateGapMeter(gapValue) {
+
+            const fill = document.getElementById("gapFill");
+
+            const clamped =
+                Math.max(-100, Math.min(100, gapValue));
+
+            const halfWidth =
+                Math.abs(clamped) / 2;
+
+            fill.className =
+                "gap-fill " +
+                (clamped >= 0 ? "positive" : "negative");
+
+            fill.style.width =
+                halfWidth + "%";
+
+            fill.style.left =
+                clamped >= 0 ? "50%" : (50 - halfWidth) + "%";
+
+        }
+
+
+        /* =================================
+           BUILD A DONUT ELEMENT
+        ================================= */
+
+        function buildDonutSlices(positive, negative, neutral) {
+
+            const total =
+                positive + negative + neutral;
+
+            if (total <= 0) {
+
+                return "var(--grid-line) 0deg 360deg";
+
+            }
+
+            const posDeg =
+                (positive / total) * 360;
+
+            const negDeg =
+                posDeg + (negative / total) * 360;
+
+            return (
+                "var(--positive) 0deg " + posDeg + "deg, " +
+                "var(--negative) " + posDeg + "deg " + negDeg + "deg, " +
+                "var(--neutral) " + negDeg + "deg 360deg"
+            );
+
+        }
+
+
+        /* =================================
+           UPDATE OVERALL DISTRIBUTION DONUT
+        ================================= */
+
+        function updateDistributionDonut(positiveRate, negativeRate, neutralRate, totalComments) {
+
+            const donut =
+                document.getElementById("distributionDonut");
+
+            donut.style.background =
+                "conic-gradient(" +
+                buildDonutSlices(positiveRate, negativeRate, neutralRate) +
+                ")";
+
+            document.getElementById("distributionDonutTotal").textContent =
+                totalComments;
+
+            document.getElementById("legendPositive").textContent =
+                positiveRate + "%";
+
+            document.getElementById("legendNegative").textContent =
+                negativeRate + "%";
+
+            document.getElementById("legendNeutral").textContent =
+                neutralRate + "%";
+
+        }
+
+
+        /* =================================
+           BUILD PER-PLATFORM MINI DONUTS
+        ================================= */
+
+        function buildPlatformDonuts(data) {
+
+            const container =
+                document.getElementById("platformDonuts");
+
+            container.innerHTML = "";
+
+            Object.keys(data).forEach(function(platform) {
+
+                const comments =
+                    data[platform] || [];
+
+                let positive = 0;
+                let negative = 0;
+                let neutral = 0;
+
+                comments.forEach(function(comment) {
+
+                    const tone =
+                        sentimentTone(comment[1]);
+
+                    if (tone === "positive") positive++;
+                    else if (tone === "negative") negative++;
+                    else neutral++;
+
+                });
+
+                const total =
+                    positive + negative + neutral;
+
+                const item =
+                    document.createElement("div");
+
+                item.className =
+                    "platform-donut-item";
+
+                item.innerHTML = `
+
+                    <div class="donut-wrap">
+                        <div
+                            class="donut"
+                            style="background: conic-gradient(${buildDonutSlices(positive, negative, neutral)});"
+                        ></div>
+                        <div class="donut-hole">
+                            <span class="donut-hole-value">${total}</span>
+                        </div>
+                    </div>
+                    <span class="platform-donut-label">${escapeHTML(platform)}</span>
+
+                `;
+
+                container.appendChild(item);
+
+            });
+
+        }
+
+
+        /* =================================
+           FORM SUBMISSION
+        ================================== */
+
+        form.addEventListener(
+            "submit",
+            async function(event) {
+
+
+                /*
+                 * Prevent normal form
+                 * submission.
+                 */
+
+                event.preventDefault();
+
+
+                console.log(
+                    "Form submitted"
+                );
+
+
+                /* =========================
+                   GET TOPIC
+                ========================== */
+
+                const topic =
+                    document.getElementById(
+                        "topic"
+                    ).value.trim();
+
+
+                if (
+                    !topic
+                ) {
+
+                    alert(
+                        "Please enter a topic."
+                    );
+
+                    return;
+
+                }
+
+
+                console.log(
+                    "Topic:",
+                    topic
+                );
+
+
+                /* =========================
+                   HIDE PREVIOUS RESULTS
+                ========================== */
+
+                document.getElementById(
+                    "results"
+                ).style.display =
+                    "none";
+
+
+                /* =========================
+                   SHOW LOADING
+                ========================== */
+
+                document.getElementById(
+                    "loadingScreen"
+                ).style.display =
+                    "block";
+
+                setStatus("busy");
+
+
+                try {
+
+
+                    /* =========================
+                       SEND API REQUEST
+                    ========================== */
+
+                    const response =
+                        await fetch(
+                            "/api/predict/",
+                            {
+
+                                method: "POST",
+
+
+                                headers: {
+
+                                    "Content-Type":
+                                        "application/json",
+
+
+                                    "X-CSRFToken":
+                                        document.querySelector(
+                                            "[name=csrfmiddlewaretoken]"
+                                        ).value
+
+                                },
+
+
+                                body:
+                                    JSON.stringify({
+                                        topic: topic
+                                    })
+
+                            }
+                        );
+
+
+                    console.log(
+                        "Response:",
+                        response
+                    );
+
+
+                    /* =========================
+                       CHECK RESPONSE
+                    ========================== */
+
+                    if (
+                        !response.ok
+                    ) {
+
+                        throw new Error(
+                            "API returned HTTP " +
+                            response.status
+                        );
+
+                    }
+
+
+                    /* =========================
+                       CONVERT TO JSON
+                    ========================== */
+
+                    const data =
+                        await response.json();
+
+
+                    console.log(
+                        "API Data:",
+                        data
+                    );
+
+
+                    /* =========================
+                       HIDE LOADING
+                    ========================== */
+
+                    document.getElementById(
+                        "loadingScreen"
+                    ).style.display =
+                        "none";
+
+
+                    /* =========================
+                       DISPLAY STATISTICS
+                    ========================== */
+
+                    document.getElementById(
+                        "resultTopic"
+                    ).textContent =
+                        data.topic;
+
+
+                    document.getElementById(
+                        "overallSentiment"
+                    ).textContent =
+                        data.statistics
+                            .overall_sentiment;
+
+
+                    document.getElementById(
+                        "totalComments"
+                    ).textContent =
+                        data.statistics
+                            .total_comments;
+
+
+                    document.getElementById(
+                        "positiveRate"
+                    ).textContent =
+                        data.statistics
+                            .positive_rate +
+                        "%";
+
+
+                    document.getElementById(
+                        "negativeRate"
+                    ).textContent =
+                        data.statistics
+                            .negative_rate +
+                        "%";
+
+
+                    document.getElementById(
+                        "neutralRate"
+                    ).textContent =
+                        data.statistics
+                            .neutral_rate +
+                        "%";
+
+
+                    document.getElementById(
+                        "sentimentGap"
+                    ).textContent =
+
+                        (
+                            data.statistics
+                                .sentiment_gap >= 0
+
+                                ? "+"
+
+                                : ""
+                        )
+
+                        +
+
+                        data.statistics
+                            .sentiment_gap
+
+                        +
+
+                        "%";
+
+                    updateGapMeter(
+                        Number(
+                            data.statistics
+                                .sentiment_gap
+                        ) || 0
+                    );
+
+                    updateDistributionDonut(
+                        Number(data.statistics.positive_rate) || 0,
+                        Number(data.statistics.negative_rate) || 0,
+                        Number(data.statistics.neutral_rate) || 0,
+                        Number(data.statistics.total_comments) || 0
+                    );
+
+
+                    /* =========================
+                       STORE COMMENTS
+                    ========================== */
+
+                    commentsData =
+                        data.results || {};
+
+
+                    console.log(
+                        "Comments:",
+                        commentsData
+                    );
+
+
+                    /* =========================
+                       CREATE PLATFORM BUTTONS
+                    ========================== */
+
+                    createPlatformButtons();
+
+                    buildPlatformDonuts(
+                        commentsData
+                    );
+
+
+                    /* =========================
+                       DISPLAY FIRST PLATFORM
+                    ========================== */
+
+                    const platforms =
+                        Object.keys(
+                            commentsData
+                        );
+
+
+                    if (
+                        platforms.length > 0
+                    ) {
+
+                        displayComments(
+                            platforms[0],
+                            1
+                        );
+
+                    }
+
+                    else {
+
+                        document.getElementById(
+                            "commentsContainer"
+                        ).innerHTML =
+                            "<p>No comments were found.</p>";
+
+                    }
+
+
+                    /* =========================
+                       SHOW RESULTS
+                    ========================== */
+
+                    document.getElementById(
+                        "results"
+                    ).style.display =
+                        "block";
+
+                    setStatus("live");
+
+
+                }
+
+
+                catch (error) {
+
+
+                    console.error(
+                        "Error:",
+                        error
+                    );
+
+
+                    /* =========================
+                       HIDE LOADING
+                    ========================== */
+
+                    document.getElementById(
+                        "loadingScreen"
+                    ).style.display =
+                        "none";
+
+                    setStatus("idle");
+
+
+                    alert(
+                        "Something went wrong while analyzing the topic.\n\n"
+                        + error.message
+                    );
+
+                }
+
+            }
+        );
+
+    </script>
+
+</body>
+
+</html>

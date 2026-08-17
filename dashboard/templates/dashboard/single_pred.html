@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Single Text Analysis | SentimentScope</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+
+            font-family: Arial, sans-serif;
+
+            background:
+                radial-gradient(
+                    circle at top left,
+                    #172554,
+                    #020617 45%,
+                    #000000
+                );
+
+            color: #e2e8f0;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            padding: 30px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 750px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+
+            font-size: 2.5rem;
+
+            background: linear-gradient(
+                90deg,
+                #22d3ee,
+                #6366f1
+            );
+
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #94a3b8;
+            margin-top: 10px;
+        }
+
+        .card {
+            background: rgba(15, 23, 42, 0.9);
+
+            border: 1px solid #1e293b;
+
+            border-radius: 16px;
+
+            padding: 30px;
+
+            box-shadow:
+                0 20px 50px rgba(0, 0, 0, 0.4);
+
+            backdrop-filter: blur(10px);
+        }
+
+        label {
+            display: block;
+
+            margin-bottom: 10px;
+
+            font-weight: bold;
+
+            color: #cbd5e1;
+        }
+
+        textarea {
+            width: 100%;
+
+            min-height: 160px;
+
+            resize: vertical;
+
+            padding: 15px;
+
+            border-radius: 10px;
+
+            border: 1px solid #334155;
+
+            background: #020617;
+
+            color: #f8fafc;
+
+            font-size: 16px;
+
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: #22d3ee;
+
+            box-shadow:
+                0 0 0 2px rgba(34, 211, 238, 0.15);
+        }
+
+        button {
+            width: 100%;
+
+            margin-top: 20px;
+
+            padding: 14px;
+
+            border: none;
+
+            border-radius: 10px;
+
+            background: linear-gradient(
+                90deg,
+                #0891b2,
+                #4f46e5
+            );
+
+            color: white;
+
+            font-size: 16px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+
+            box-shadow:
+                0 8px 25px rgba(79, 70, 229, 0.35);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #loading {
+            display: none;
+
+            text-align: center;
+
+            margin-top: 25px;
+
+            color: #22d3ee;
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+
+            border: 3px solid #334155;
+
+            border-top: 3px solid #22d3ee;
+
+            border-radius: 50%;
+
+            animation: spin 1s linear infinite;
+
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #result {
+            display: none;
+
+            margin-top: 30px;
+
+            padding: 25px;
+
+            border-radius: 12px;
+
+            background: #020617;
+
+            border: 1px solid #334155;
+
+            text-align: center;
+        }
+
+        .result-title {
+            color: #94a3b8;
+
+            font-size: 14px;
+
+            text-transform: uppercase;
+
+            letter-spacing: 2px;
+        }
+
+        #sentiment {
+            font-size: 2.5rem;
+
+            font-weight: bold;
+
+            margin: 10px 0;
+        }
+
+        #confidence {
+            font-size: 1.2rem;
+
+            color: #94a3b8;
+        }
+
+        .positive {
+            color: #22c55e;
+        }
+
+        .negative {
+            color: #ef4444;
+        }
+
+        .neutral {
+            color: #3b82f6;
+        }
+
+        .error {
+            display: none;
+
+            margin-top: 20px;
+
+            padding: 12px;
+
+            border-radius: 8px;
+
+            background: rgba(239, 68, 68, 0.1);
+
+            border: 1px solid #ef4444;
+
+            color: #fca5a5;
+
+            text-align: center;
+        }
+
+        .back {
+            display: block;
+
+            text-align: center;
+
+            margin-top: 20px;
+
+            color: #94a3b8;
+
+            text-decoration: none;
+        }
+
+        .back:hover {
+            color: #22d3ee;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+
+        <h1>SentimentScope</h1>
+
+        <p>
+            Analyze the sentiment of a single piece of text
+        </p>
+
+    </div>
+
+
+    <div class="card">
+
+        <form id="predictionForm">
+
+            {% csrf_token %}
+
+            <label for="text">
+                Enter your text
+            </label>
+
+            <textarea
+                id="text"
+                name="text"
+                placeholder="Example: I really enjoyed this product!"
+                required
+            ></textarea>
+
+            <button
+                type="submit"
+                id="predictButton"
+            >
+                Analyze Sentiment
+            </button>
+
+        </form>
+
+
+        <!-- Loading -->
+
+        <div id="loading">
+
+            <div class="spinner"></div>
+
+            <div>
+                Analyzing text...
+            </div>
+
+        </div>
+
+
+        <!-- Error -->
+
+        <div
+            id="error"
+            class="error"
+        ></div>
+
+
+        <!-- Result -->
+
+        <div id="result">
+
+            <div class="result-title">
+                Predicted Sentiment
+            </div>
+
+            <div id="sentiment">
+                —
+            </div>
+
+            <div id="confidence">
+                Confidence: —
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <a
+        href="/"
+        class="back"
+    >
+        ← Back to SentimentScope
+    </a>
+
+</div>
+
+
+<script>
+
+const form =
+    document.getElementById("predictionForm");
+
+const textInput =
+    document.getElementById("text");
+
+const button =
+    document.getElementById("predictButton");
+
+const loading =
+    document.getElementById("loading");
+
+const result =
+    document.getElementById("result");
+
+const sentiment =
+    document.getElementById("sentiment");
+
+const confidence =
+    document.getElementById("confidence");
+
+const errorBox =
+    document.getElementById("error");
+
+
+form.addEventListener(
+    "submit",
+    async function(event) {
+
+        event.preventDefault();
+
+
+        const text =
+            textInput.value.trim();
+
+
+        if (!text) {
+
+            return;
+
+        }
+
+
+        // Reset UI
+
+        result.style.display = "none";
+
+        errorBox.style.display = "none";
+
+        loading.style.display = "block";
+
+        button.disabled = true;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "{% url 'single_prediction_api' %}",
+                    {
+                        method: "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json",
+
+                            "X-CSRFToken":
+                                document.querySelector(
+                                    "[name=csrfmiddlewaretoken]"
+                                ).value
+
+                        },
+
+                        body: JSON.stringify({
+                            text: text
+                        })
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.error ||
+                    "Prediction failed."
+                );
+
+            }
+
+
+            /*
+             * Expected response:
+             *
+             * {
+             *     "text": "...",
+             *     "sentiment": "POS",
+             *     "confidence": 0.92
+             * }
+             */
+
+
+            sentiment.textContent =
+                data.sentiment;
+
+
+            confidence.textContent =
+                "Confidence: " +
+                (data.confidence).toFixed(2) +
+                "%";
+
+
+            // Remove previous classes
+
+            sentiment.classList.remove(
+                "positive",
+                "negative",
+                "neutral"
+            );
+
+
+            // Apply sentiment color
+
+            if (
+                data.sentiment === "POS" ||
+                data.sentiment === "positive"
+            ) {
+
+                sentiment.classList.add(
+                    "positive"
+                );
+
+            }
+
+            else if (
+                data.sentiment === "NEG" ||
+                data.sentiment === "negative"
+            ) {
+
+                sentiment.classList.add(
+                    "negative"
+                );
+
+            }
+
+            else {
+
+                sentiment.classList.add(
+                    "neutral"
+                );
+
+            }
+
+
+            result.style.display = "block";
+
+        }
+
+        catch (error) {
+
+            console.error(error);
+
+            errorBox.textContent =
+                error.message ||
+                "Something went wrong.";
+
+            errorBox.style.display =
+                "block";
+
+        }
+
+        finally {
+
+            loading.style.display =
+                "none";
+
+            button.disabled =
+                false;
+
+        }
+
+    }
+);
+
+</script>
+
+</body>
+</html>

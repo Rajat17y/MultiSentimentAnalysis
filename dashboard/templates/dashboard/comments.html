@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <title>Comments</title>
+
+</head>
+
+<body>
+
+    <h1>SentimentScope</h1>
+
+    <h2>
+        Topic: {{ analysis.topic }}
+    </h2>
+
+
+    <!-- Platform filters -->
+
+    <a href="{% url 'comments' analysis.id %}">
+        All
+    </a>
+
+    |
+
+    <a href="?platform=Reddit">
+        Reddit
+    </a>
+
+    |
+
+    <a href="?platform=HackerNews">
+        HackerNews
+    </a>
+
+    |
+
+    <a href="?platform=Dev.to">
+        Dev.to
+    </a>
+
+
+    <hr>
+
+
+    {% for item in page_obj %}
+
+        <div>
+
+            <h3>
+                {{ item.platform }}
+            </h3>
+
+            <p>
+                {{ item.comment }}
+            </p>
+
+            <p>
+
+                Classification:
+                <strong>
+                    {{ item.sentiment|title }}
+                </strong>
+
+            </p>
+
+            <p>
+
+                Confidence:
+                {{ item.confidence }}%
+
+            </p>
+
+        </div>
+
+        <hr>
+
+    {% empty %}
+
+        <p>
+            No comments found.
+        </p>
+
+    {% endfor %}
+
+
+    <!-- Pagination -->
+
+    <div>
+
+        {% if page_obj.has_previous %}
+
+            <a
+                href="?page=1{% if selected_platform %}&platform={{ selected_platform }}{% endif %}"
+            >
+                First
+            </a>
+
+            <a
+                href="?page={{ page_obj.previous_page_number }}{% if selected_platform %}&platform={{ selected_platform }}{% endif %}"
+            >
+                Previous
+            </a>
+
+        {% endif %}
+
+
+        <span>
+
+            Page {{ page_obj.number }}
+            of {{ page_obj.paginator.num_pages }}
+
+        </span>
+
+
+        {% if page_obj.has_next %}
+
+            <a
+                href="?page={{ page_obj.next_page_number }}{% if selected_platform %}&platform={{ selected_platform }}{% endif %}"
+            >
+                Next
+            </a>
+
+            <a
+                href="?page={{ page_obj.paginator.num_pages }}{% if selected_platform %}&platform={{ selected_platform }}{% endif %}"
+            >
+                Last
+            </a>
+
+        {% endif %}
+
+    </div>
+
+</body>
+
+</html>
